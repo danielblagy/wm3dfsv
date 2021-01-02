@@ -56,13 +56,21 @@ function create_node(current_node, dirs, count, length) {
 
 function make_geometry(scene, node, x, z) {
 	console.log("make_geometry call x: ", x, "  z: ", z);
-	const geometry = new THREE.BoxGeometry(5, 5, 5);
-	const material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+	
+	if (node.type === NodeType.Directory) {
+		var geometry = new THREE.BoxGeometry(5, 5, 5);
+		var material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+	}
+	else if (node.type === NodeType.File) {
+		var geometry = new THREE.SphereGeometry(5, 5, 5);
+		var material = new THREE.MeshBasicMaterial( { color: 0x3bd163 } );
+	}
+	
 	//const material = new THREE.MeshBasicMaterial( { color: () } );
-	const cube = new THREE.Mesh(geometry, material);
-	cube.position.x = x;
-	cube.position.z = z;
-	scene.add(cube);
+	const node_mesh = new THREE.Mesh(geometry, material);
+	node_mesh.position.x = x;
+	node_mesh.position.z = z;
+	scene.add(node_mesh);
 	
 	let label = new THREE.TextSprite({
 		text: node.name,
@@ -70,10 +78,10 @@ function make_geometry(scene, node, x, z) {
 		fontSize: 4,
 		color: '#ffbbff',
 	});
-	//cube.add(label);
-	label.position.x = cube.position.x;
-	label.position.y = cube.position.y;
-	label.position.z = cube.position.z + 5;
+	
+	label.position.x = node_mesh.position.x;
+	label.position.y = node_mesh.position.y;
+	label.position.z = node_mesh.position.z + 5;
 	scene.add(label);
 	
 	let i = 0;
