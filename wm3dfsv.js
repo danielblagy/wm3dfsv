@@ -54,8 +54,18 @@ function create_node(current_node, dirs, count, length) {
 		create_node(current_node, dirs, count, length);
 }
 
-function display_node_tree(root) {
-	console.log(root);
+function make_geometry(scene, node, i) {
+	console.log("make_geometry call ", i);
+	const geometry = new THREE.BoxGeometry(5, 5, 5);
+	const material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+	const cube = new THREE.Mesh(geometry, material);
+	cube.position.x = 10 * i;
+	//cube.position.y = 50 * i;
+	scene.add(cube);
+	
+	for (const child of node.children) {
+		make_geometry(scene, child, ++i);
+	}
 }
 
 function start(files) {
@@ -69,9 +79,6 @@ function start(files) {
 		let dirs = file["webkitRelativePath"].split("/");
 		dirs.shift();	// remove the first element (which is a name of the root dir)
 		create_node(root_node, dirs, 0, dirs.length);
-		/*dirs.forEach(function(element) {
-			create_node(root_node, element);
-		});*/
 	}
 	
 	console.log(root_node);
@@ -83,18 +90,31 @@ function start(files) {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	document.body.appendChild(renderer.domElement);
 	
-	const geometry = new THREE.BoxGeometry();
-	const material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
-	const cube = new THREE.Mesh(geometry, material);
-	scene.add(cube);
+	//const geometry = new THREE.BoxGeometry();
+	//const material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+	//
+	//const cube1 = new THREE.Mesh(geometry, material);
+	//cube1.position.set(10, 0, 0);
+	//
+	//const cube2 = new THREE.Mesh(geometry, material);
+	//cube2.position.set(-10, 0, 0);
+	//
+	//const group = new THREE.Group();
+	//group.add(cube1);
+	//group.add(cube2);
+	//
+	//scene.add(group);
+	
+	make_geometry(scene, root_node, 0);
 			
-	camera.position.z = 5;
+	camera.position.z = 50;
 	
 	function update_and_render() {
 		requestAnimationFrame(update_and_render);
-		cube.rotation.x += 0.01;
-		cube.rotation.y += 0.035;
-		cube.rotation.z -= 0.015;
+		//group.rotation.x += 0.01;
+		//group.rotation.y += 0.035;
+		//group.rotation.z -= 0.015;
+		//group.position.z += 0.01;
 		renderer.render(scene, camera);
 	}
 	
