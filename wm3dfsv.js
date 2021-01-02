@@ -69,8 +69,12 @@ function make_geometry(scene, node, x, z) {
 		fontFamily: 'Arial, Helvetica, sans-serif',
 		fontSize: 4,
 		color: '#ffbbff',
-	  });
-	cube.add(label);
+	});
+	//cube.add(label);
+	label.position.x = cube.position.x;
+	label.position.y = cube.position.y;
+	label.position.z = cube.position.z + 5;
+	scene.add(label);
 	
 	let i = 0;
 	let sign = 1;
@@ -118,14 +122,6 @@ function start(files) {
 	//group.add(cube2);
 	//
 	//scene.add(group);
-	
-	let sprite = new THREE.TextSprite({
-		text: 'Hello World!',
-		fontFamily: 'Arial, Helvetica, sans-serif',
-		fontSize: 12,
-		color: '#ffbbff',
-	  });
-	scene.add(sprite);
 	
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	// controls.update() must be called after any manual changes to the camera's transform
