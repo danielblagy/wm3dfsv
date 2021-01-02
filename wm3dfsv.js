@@ -57,16 +57,19 @@ function create_node(current_node, dirs, count, length) {
 function make_geometry(scene, node, x, z) {
 	console.log("make_geometry call x: ", x, "  z: ", z);
 	
+	const node_size = 5;
+	const x_gap = node_size * 5;
+	const z_gap = node_size * 5;
+	
 	if (node.type === NodeType.Directory) {
-		var geometry = new THREE.BoxGeometry(5, 5, 5);
+		var geometry = new THREE.BoxGeometry(node_size, node_size, node_size);
 		var material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
 	}
 	else if (node.type === NodeType.File) {
-		var geometry = new THREE.SphereGeometry(5, 5, 5);
+		var geometry = new THREE.SphereGeometry(node_size / 2);
 		var material = new THREE.MeshBasicMaterial( { color: 0x3bd163 } );
 	}
 	
-	//const material = new THREE.MeshBasicMaterial( { color: () } );
 	const node_mesh = new THREE.Mesh(geometry, material);
 	node_mesh.position.x = x;
 	node_mesh.position.z = z;
@@ -75,31 +78,27 @@ function make_geometry(scene, node, x, z) {
 	let label = new THREE.TextSprite({
 		text: node.name,
 		fontFamily: 'Arial, Helvetica, sans-serif',
-		fontSize: 4,
+		fontSize: node_size / 2,
 		color: '#ffbbff',
 	});
 	
 	label.position.x = node_mesh.position.x;
 	label.position.y = node_mesh.position.y;
-	label.position.z = node_mesh.position.z + 5;
+	label.position.z = node_mesh.position.z + node_size;
 	scene.add(label);
 	
 	let i = 0;
 	let sign = 1;
 	for (const child of node.children) {
-		make_geometry(scene, child, sign * 10 * i, z - 10);
+		make_geometry(scene, child, sign * x_gap * i, z - z_gap);
 		i++;
 		sign *= -1;
 	}
 }
 
 function start(files) {
-	// separate root dir name from the files in array
-	// for each file in array determine its position in the file system tree and create a node object
-	
 	var root_node = new Node(files[0]["webkitRelativePath"].split("/")[0], undefined, [], NodeType.Directory);
 	
-	// brute force algorithm
 	for (const file of files) {
 		let dirs = file["webkitRelativePath"].split("/");
 		dirs.shift();	// remove the first element (which is a name of the root dir)
@@ -116,24 +115,7 @@ function start(files) {
 	renderer.setClearColor(0x4B5A20, 1.0);
 	document.body.appendChild(renderer.domElement);
 	
-	//const geometry = new THREE.BoxGeometry();
-	//const material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
-	//
-	//const cube1 = new THREE.Mesh(geometry, material);
-	//cube1.position.set(10, 0, 0);
-	//
-	//const cube2 = new THREE.Mesh(geometry, material);
-	//cube2.position.set(-10, 0, 0);
-	//
-	//const group = new THREE.Group();
-	//group.add(cube1);
-	//group.add(cube2);
-	//
-	//scene.add(group);
-	
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
-	// controls.update() must be called after any manual changes to the camera's transform
-	//controls.update();
 	
 	make_geometry(scene, root_node, 0, 0);
 			
