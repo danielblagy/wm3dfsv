@@ -39,8 +39,10 @@ function create_node(current_node, dirs, count, length) {
 	if (found)
 		current_node = current_node.children[i];
 	else {
-		// if name includes '.', then we'll consider it a file, otherwise it's a directory
-		if (dirs[count].includes("."))
+		// if the element of dirs is the last one, it's a file, ptherwise it's a directory
+		// e.g. if dirs = ['project', 'res', 'data.json'], the last element is a file (data.json),
+		// others are directories
+		if (count == length - 1)
 			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.File));
 		else
 			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.Directory));
@@ -90,10 +92,11 @@ function make_geometry(scene, node, x, z) {
 	let i = 0;
 	let sign = 1;
 	for (const child of node.children) {
-		let next_child_x = sign * x_gap * i;
-		let next_child_z = z - z_gap;
+		//let next_child_x = sign * (x_gap * i + child.children.length * node_size);
+		let next_child_x = sign * x_gap * i + node_mesh.position.x;
+		let next_child_z = z - z_gap + node_mesh.position.z;
 		
-		const line_material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+		const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
 		
 		const line_points = [];
 		line_points.push(node_mesh.position);
@@ -135,6 +138,16 @@ function start(files) {
 			
 	camera.position.z = 50;
 	
+	// keyboard input handling
+	document.addEventListener("keydown", (event) => {
+		console.log(`key=${event.key},code=${event.code}`);
+		console.log(camera.position);
+		if (event.code == "KeyW")
+			camera.position.z -= 5;
+		else if (event.code == "KeyS")
+		camera.position.z += 5;
+	});
+	
 	function update_and_render() {
 		requestAnimationFrame(update_and_render);
 		
@@ -144,7 +157,7 @@ function start(files) {
 		//group.position.z += 0.01;
 		
 		// required if controls.enableDamping or controls.autoRotate are set to true
-		controls.update();
+		//controls.update();
 		
 		renderer.render(scene, camera);
 	}
