@@ -90,7 +90,21 @@ function make_geometry(scene, node, x, z) {
 	let i = 0;
 	let sign = 1;
 	for (const child of node.children) {
-		make_geometry(scene, child, sign * x_gap * i, z - z_gap);
+		let next_child_x = sign * x_gap * i;
+		let next_child_z = z - z_gap;
+		
+		const line_material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+		
+		const line_points = [];
+		line_points.push(node_mesh.position);
+		line_points.push(new THREE.Vector3(next_child_x, 0, next_child_z));
+		
+		const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
+		
+		let line = new THREE.Line(line_geometry, line_material);
+		scene.add(line);
+		
+		make_geometry(scene, child, next_child_x, next_child_z);
 		i++;
 		sign *= -1;
 	}
