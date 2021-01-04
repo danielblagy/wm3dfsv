@@ -77,6 +77,8 @@ function make_geometry(scene, node, x, z) {
 	node_mesh.position.z = z;
 	scene.add(node_mesh);
 	
+	
+	
 	let label = new THREE.TextSprite({
 		text: node.name,
 		fontFamily: 'Arial, Helvetica, sans-serif',
@@ -92,8 +94,8 @@ function make_geometry(scene, node, x, z) {
 	let i = 0;
 	let sign = 1;
 	for (const child of node.children) {
-		//let next_child_x = sign * (x_gap * i + child.children.length * node_size);
-		let next_child_x = sign * x_gap * i + node_mesh.position.x;
+		let next_child_x = sign * (x_gap * i + child.children.length * node_size) + node_mesh.position.x;
+		//let next_child_x = sign * x_gap * i + node_mesh.position.x;
 		let next_child_z = z - z_gap + node_mesh.position.z;
 		
 		const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
@@ -134,19 +136,9 @@ function start(files) {
 	
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	
-	make_geometry(scene, root_node, 0, 0);
-			
 	camera.position.z = 50;
 	
-	// keyboard input handling
-	document.addEventListener("keydown", (event) => {
-		console.log(`key=${event.key},code=${event.code}`);
-		console.log(camera.position);
-		if (event.code == "KeyW")
-			camera.position.z -= 5;
-		else if (event.code == "KeyS")
-		camera.position.z += 5;
-	});
+	make_geometry(scene, root_node, 0, 0);
 	
 	function update_and_render() {
 		requestAnimationFrame(update_and_render);
@@ -157,7 +149,7 @@ function start(files) {
 		//group.position.z += 0.01;
 		
 		// required if controls.enableDamping or controls.autoRotate are set to true
-		//controls.update();
+		controls.update();
 		
 		renderer.render(scene, camera);
 	}
