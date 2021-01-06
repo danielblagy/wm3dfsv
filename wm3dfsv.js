@@ -56,13 +56,7 @@ function create_node(current_node, dirs, count, length) {
 		create_node(current_node, dirs, count, length);
 }
 
-function make_geometry(scene, node, x, z) {
-	console.log("make_geometry call x: ", x, "  z: ", z);
-	
-	const node_size = 5;
-	const x_gap = node_size * 5;
-	const z_gap = node_size * 5;
-	
+function make_node_mesh(scene, node, node_size, x, y, z) {
 	if (node.type === NodeType.Directory) {
 		var geometry = new THREE.BoxGeometry(node_size, node_size, node_size);
 		var material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
@@ -77,8 +71,6 @@ function make_geometry(scene, node, x, z) {
 	node_mesh.position.z = z;
 	scene.add(node_mesh);
 	
-	
-	
 	let label = new THREE.TextSprite({
 		text: node.name,
 		fontFamily: 'Arial, Helvetica, sans-serif',
@@ -91,12 +83,24 @@ function make_geometry(scene, node, x, z) {
 	label.position.z = node_mesh.position.z + node_size;
 	scene.add(label);
 	
+	return node_mesh;
+}
+
+function make_geometry(scene, node, x, z) {
+	console.log("make_geometry call x: ", x, "  z: ", z);
+	
+	const node_size = 5;
+	const x_gap = node_size * 10 / node.children.length;
+	const z_gap = node_size * 5;
+	
+	const node_mesh = make_node_mesh(scene, node, node_size, x, 0, z);
+	
 	let i = 0;
 	let sign = 1;
+	let next_child_z = z - z_gap + node_mesh.position.z;
 	for (const child of node.children) {
 		let next_child_x = sign * (x_gap * i + child.children.length * node_size) + node_mesh.position.x;
 		//let next_child_x = sign * x_gap * i + node_mesh.position.x;
-		let next_child_z = z - z_gap + node_mesh.position.z;
 		
 		const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
 		
@@ -110,6 +114,22 @@ function make_geometry(scene, node, x, z) {
 		scene.add(line);
 		
 		make_geometry(scene, child, next_child_x, next_child_z);
+		i++;
+		sign *= -1;
+	}
+}
+
+function make_interactive_geometry(scene, node) {
+	const root_node_size = 5;
+	
+	make_node_mesh(scene, node, root_node_size, 0, 0, 0);
+	
+	let i = 0;
+	let sign = 1;
+	const x_gap = root_node_size * 10 / node.children.length;
+	for (const child of node.children) {
+		let x = sign * (x_gap * i);
+		make_node_mesh(scene, child, root_node_size / 1.5, x, 0, -2 * root_node_size);
 		i++;
 		sign *= -1;
 	}
@@ -140,18 +160,65 @@ function start(files) {
 	
 	make_geometry(scene, root_node, 0, 0);
 	
+	const interactive_scene = new THREE.Scene();
+	
+	var interactive_mode_enabled = false;
+	var interactive_current_node = root_node;
+	var interactive_pointer = 0;
+	
+	make_interactive_geometry(interactive_scene, interactive_current_node);
+	
+	document.addEventListener('keyup', function(event) {
+		console.log(event);
+		// f
+		if(event.keyCode == 70) {
+			interactive_mode_enabled = !interactive_mode_enabled;
+		}
+		
+		// arrow down
+		else if(event.keyCode == 40) {
+			if (interactive_current_node !== root_node) {
+				interactive_current_node = interactive_current_node.root;
+			}
+		}
+		// arrow up
+		else if(event.keyCode == 38) {
+			if (interactive_pointer < interactive_current_node.children.length) {
+				interactive_current_node = interactive_current_node.children[interactive_pointer];
+				interactive_pointer = 0;
+			}
+		}
+		// arrow right
+		else if(event.keyCode == 39) {
+			if (interactive_pointer + 1 < interactive_current_node.children.length) {
+				interactive_pointer++;
+			}
+			else {
+				interactive_pointer = 0;
+			}
+		}
+		// arrow left
+		else if(event.keyCode == 37) {
+			if (interactive_pointer === 0) {
+				if (interactive_current_node.children.length)
+				interactive_pointer = interactive_current_node.children.length - 1;
+			}
+			else {
+				interactive_pointer--;
+			}
+		}
+	});
+	
 	function update_and_render() {
 		requestAnimationFrame(update_and_render);
-		
-		//group.rotation.x += 0.01;
-		//group.rotation.y += 0.035;
-		//group.rotation.z -= 0.015;
-		//group.position.z += 0.01;
 		
 		// required if controls.enableDamping or controls.autoRotate are set to true
 		controls.update();
 		
-		renderer.render(scene, camera);
+		if (interactive_mode_enabled)
+			renderer.render(interactive_scene, camera);
+		else
+			renderer.render(scene, camera);
 	}
 	
 	update_and_render();
