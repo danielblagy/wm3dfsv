@@ -119,20 +119,47 @@ function make_geometry(scene, node, x, z) {
 	}
 }
 
-function make_interactive_geometry(scene, node) {
-	const root_node_size = 5;
+function make_interactive_geometry(scene, node, pointer) {
+	const node_size = 5;
 	
-	make_node_mesh(scene, node, root_node_size, 0, 0, 0);
+	make_node_mesh(scene, node, node_size, 0, 0, 0);
 	
 	let i = 0;
-	let sign = 1;
-	const x_gap = root_node_size * 10 / node.children.length;
+	const x_gap = node_size * 5;
+	const start_x = -1 * x_gap * (node.children.length - 1) / 2;
 	for (const child of node.children) {
-		let x = sign * (x_gap * i);
-		make_node_mesh(scene, child, root_node_size / 1.5, x, 0, -2 * root_node_size);
+		let x = start_x + x_gap * i;
+		let child_mesh = make_node_mesh(scene, child, node_size, x, 0, -2 * node_size);
+		
+		// highlight if selected
+		if (pointer == i) {
+			const wireframe = new THREE.WireframeGeometry(child_mesh.geometry);
+			const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+			const line = new THREE.LineSegments(wireframe, line_material);
+			line.material.depthTest = false;
+			line.material.opacity = 0.25;
+			line.material.transparent = true;
+			line.position.x = child_mesh.position.x;
+			line.position.y = child_mesh.position.y;
+			line.position.z = child_mesh.position.z;
+			scene.add(line);
+		}
+		
 		i++;
-		sign *= -1;
 	}
+}
+
+function clear_three_object(three_object) {
+	while(three_object.children.length > 0) { 
+		clear_three_object(three_object.children[0]);
+		three_object.remove(three_object.children[0]);
+	}
+	
+	if(three_object.geometry)
+		three_object.geometry.dispose();
+
+	if(three_object.material)
+		three_object.material.dispose();
 }
 
 function start(files) {
@@ -165,11 +192,10 @@ function start(files) {
 	var interactive_mode_enabled = false;
 	var interactive_current_node = root_node;
 	var interactive_pointer = 0;
-	
-	make_interactive_geometry(interactive_scene, interactive_current_node);
+	var interactive_updated = false;
 	
 	document.addEventListener('keyup', function(event) {
-		console.log(event);
+		interactive_updated = true;
 		// f
 		if(event.keyCode == 70) {
 			interactive_mode_enabled = !interactive_mode_enabled;
@@ -214,6 +240,12 @@ function start(files) {
 		
 		// required if controls.enableDamping or controls.autoRotate are set to true
 		controls.update();
+		
+		if (interactive_updated)
+		{
+			clear_three_object(interactive_scene);
+			make_interactive_geometry(interactive_scene, interactive_current_node, interactive_pointer);
+		}
 		
 		if (interactive_mode_enabled)
 			renderer.render(interactive_scene, camera);
