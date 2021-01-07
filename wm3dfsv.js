@@ -13,6 +13,17 @@ class Node {
 	}
 }
 
+const NODE_SIZE = 5;
+
+const DIRECTORY_GEOMETRY = new THREE.BoxGeometry(NODE_SIZE, NODE_SIZE, NODE_SIZE);
+const DIRECTORY_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+
+var FILE_GEOMETRY = new THREE.SphereGeometry(NODE_SIZE / 2);
+var FILE_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x3bd163 } );
+
+const LINE_MATERIAL = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+const WIREFRAME_MATERIAL = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+
 function init()
 {
 	var input = document.getElementById("file-picker");
@@ -58,16 +69,14 @@ function create_node(current_node, dirs, count, length) {
 
 function make_node_mesh(scene, node, node_size, x, y, z) {
 	if (node.type === NodeType.Directory) {
-		var geometry = new THREE.BoxGeometry(node_size, node_size, node_size);
-		var material = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+		var node_mesh = new THREE.Mesh(DIRECTORY_GEOMETRY, DIRECTORY_MATERIAL);
 	}
 	else if (node.type === NodeType.File) {
-		var geometry = new THREE.SphereGeometry(node_size / 2);
-		var material = new THREE.MeshBasicMaterial( { color: 0x3bd163 } );
+		var node_mesh = new THREE.Mesh(FILE_GEOMETRY, FILE_MATERIAL);
 	}
 	
-	const node_mesh = new THREE.Mesh(geometry, material);
 	node_mesh.position.x = x;
+	node_mesh.position.y = y;
 	node_mesh.position.z = z;
 	scene.add(node_mesh);
 	
@@ -87,8 +96,6 @@ function make_node_mesh(scene, node, node_size, x, y, z) {
 }
 
 function make_geometry(scene, node, x, z) {
-	console.log("make_geometry call x: ", x, "  z: ", z);
-	
 	const node_size = 5;
 	const x_gap = node_size * 10 / node.children.length;
 	const z_gap = node_size * 5;
@@ -100,9 +107,6 @@ function make_geometry(scene, node, x, z) {
 	let next_child_z = z - z_gap + node_mesh.position.z;
 	for (const child of node.children) {
 		let next_child_x = sign * (x_gap * i + child.children.length * node_size) + node_mesh.position.x;
-		//let next_child_x = sign * x_gap * i + node_mesh.position.x;
-		
-		const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
 		
 		const line_points = [];
 		line_points.push(node_mesh.position);
@@ -110,7 +114,7 @@ function make_geometry(scene, node, x, z) {
 		
 		const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
 		
-		let line = new THREE.Line(line_geometry, line_material);
+		let line = new THREE.Line(line_geometry, LINE_MATERIAL);
 		scene.add(line);
 		
 		make_geometry(scene, child, next_child_x, next_child_z);
@@ -129,20 +133,19 @@ function make_interactive_geometry(scene, node, pointer) {
 	const start_x = -1 * x_gap * (node.children.length - 1) / 2;
 	for (const child of node.children) {
 		let x = start_x + x_gap * i;
-		let child_mesh = make_node_mesh(scene, child, node_size, x, 0, -2 * node_size);
+		let child_mesh = make_node_mesh(scene, child, node_size, x, 0, -5 * node_size);
 		
 		// highlight if selected
 		if (pointer == i) {
-			const wireframe = new THREE.WireframeGeometry(child_mesh.geometry);
-			const line_material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
-			const line = new THREE.LineSegments(wireframe, line_material);
-			line.material.depthTest = false;
-			line.material.opacity = 0.25;
-			line.material.transparent = true;
-			line.position.x = child_mesh.position.x;
-			line.position.y = child_mesh.position.y;
-			line.position.z = child_mesh.position.z;
-			scene.add(line);
+			const wireframe_geometry = new THREE.WireframeGeometry(child_mesh.geometry);
+			const wireframe_line = new THREE.LineSegments(wireframe_geometry, WIREFRAME_MATERIAL);
+			wireframe_line.material.depthTest = false;
+			wireframe_line.material.opacity = 0.25;
+			wireframe_line.material.transparent = true;
+			wireframe_line.position.x = child_mesh.position.x;
+			wireframe_line.position.y = child_mesh.position.y;
+			wireframe_line.position.z = child_mesh.position.z;
+			scene.add(wireframe_line);
 		}
 		
 		i++;
@@ -184,6 +187,7 @@ function start(files) {
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	
 	camera.position.z = 50;
+	camera.position.y = 50;
 	
 	make_geometry(scene, root_node, 0, 0);
 	
@@ -201,21 +205,21 @@ function start(files) {
 			interactive_mode_enabled = !interactive_mode_enabled;
 		}
 		
-		// arrow down
-		else if(event.keyCode == 40) {
+		// s
+		else if(event.keyCode == 83) {
 			if (interactive_current_node !== root_node) {
 				interactive_current_node = interactive_current_node.root;
 			}
 		}
-		// arrow up
-		else if(event.keyCode == 38) {
+		// w
+		else if(event.keyCode == 87) {
 			if (interactive_pointer < interactive_current_node.children.length) {
 				interactive_current_node = interactive_current_node.children[interactive_pointer];
 				interactive_pointer = 0;
 			}
 		}
-		// arrow right
-		else if(event.keyCode == 39) {
+		// d
+		else if(event.keyCode == 68) {
 			if (interactive_pointer + 1 < interactive_current_node.children.length) {
 				interactive_pointer++;
 			}
@@ -223,8 +227,8 @@ function start(files) {
 				interactive_pointer = 0;
 			}
 		}
-		// arrow left
-		else if(event.keyCode == 37) {
+		// a
+		else if(event.keyCode == 65) {
 			if (interactive_pointer === 0) {
 				if (interactive_current_node.children.length)
 				interactive_pointer = interactive_current_node.children.length - 1;
@@ -245,6 +249,7 @@ function start(files) {
 		{
 			clear_three_object(interactive_scene);
 			make_interactive_geometry(interactive_scene, interactive_current_node, interactive_pointer);
+			interactive_updated = false;
 		}
 		
 		if (interactive_mode_enabled)
