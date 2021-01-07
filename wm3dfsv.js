@@ -95,38 +95,44 @@ function make_node_mesh(scene, node, node_size, x, y, z) {
 	return node_mesh;
 }
 
+function count_dir_children(children) {
+	let i = 0;
+	for (const child of children) {
+		if (child.type === NodeType.Directory)
+			i++;
+	}
+	return i;
+}
+
 function make_geometry(scene, node, x, y, z) {
+	console.log(node, "  ", x, ":", y, ":", z);
 	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
 	
-	//const x_gap = NODE_SIZE * 10 / node.children.length;
-	//const z_gap = NODE_SIZE * 5;
+	// for child files
 	const y_gap = NODE_SIZE;
 	
 	// for child directories
 	const arc_length_between_chidlren = NODE_SIZE * 5;
-	const central_angle_for_child = 2 * Math.PI / node.children.length;
+	//const central_angle_for_child = 2 * Math.PI / node.children.length;
+	const central_angle_for_child = 2 * Math.PI / count_dir_children(node.children);
 	const radius = arc_length_between_chidlren / central_angle_for_child;
 	
-	//let i = 0;
 	let j = 1;
-	//let sign = 1;
-	let next_dir_child_z = node_mesh.position.z - radius;
-	let next_dir_child_x = node_mesh.position.x;
+	let next_dir_child_z = z - radius;
+	let next_dir_child_x = x;
 	for (const child of node.children) {
 		if (child.type == NodeType.Directory) {
+			// create line connecting the node mesh and the child node mesh
 			const line_points = [];
 			line_points.push(node_mesh.position);
 			line_points.push(new THREE.Vector3(next_dir_child_x, 0, next_dir_child_z));
-			
 			const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
-			
 			let line = new THREE.Line(line_geometry, LINE_MATERIAL);
 			scene.add(line);
 			
 			make_geometry(scene, child, next_dir_child_x, 0, next_dir_child_z);
-			//i++;
-			//sign *= -1;
 			
+			// figure out distance to the next supposed child location
 			let t = 2 * radius * Math.sin(central_angle_for_child / 2);
 			let angle = Math.PI / 2 - (Math.PI - central_angle_for_child) / 2;
 			let dz = Math.sin(angle) * t;
@@ -137,7 +143,7 @@ function make_geometry(scene, node, x, y, z) {
 		}
 		else if (child.type === NodeType.File) {
 			let next_file_node_y = y_gap * j;
-			make_geometry(scene, child, node_mesh.position.x, next_file_node_y, node_mesh.position.z);
+			make_geometry(scene, child, x, next_file_node_y, z);
 			j++;
 		}
 	}
@@ -184,18 +190,29 @@ function clear_three_object(three_object) {
 }
 
 function start(files) {
+	// generate a tree structure
 	var root_node = new Node(files[0]["webkitRelativePath"].split("/")[0], undefined, [], NodeType.Directory);
-	
 	for (const file of files) {
 		let dirs = file["webkitRelativePath"].split("/");
 		dirs.shift();	// remove the first element (which is a name of the root dir)
 		create_node(root_node, dirs, 0, dirs.length);
 	}
-	
 	console.log(root_node);
 	
-	const scene = new THREE.Scene();
-	const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+	//initialise graphics
+	const camera_fov = 75;
+	const camera_aspect_ratio = window.innerWidth / window.innerHeight;
+	const camera_near = 0.1;
+	const camera_far = 1000;
+	
+	const camera_initial_position = new THREE.Vector3(0, 50, 50);
+	
+	const camera = new THREE.PerspectiveCamera(camera_fov, camera_aspect_ratio, camera_near, camera_far);
+	
+	camera.position.set(camera_initial_position.x, camera_initial_position.y, camera_initial_position.z);
+	
+	const overview_scene = new THREE.Scene();
+	const interactive_scene = new THREE.Scene();
 	
 	const renderer = new THREE.WebGLRenderer({antialias : true});
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -204,18 +221,14 @@ function start(files) {
 	
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	
-	camera.position.z = 50;
-	camera.position.y = 50;
-	
-	make_geometry(scene, root_node, 0, 0, 0);
-	
-	const interactive_scene = new THREE.Scene();
-	
 	var interactive_mode_enabled = false;
 	var interactive_current_node = root_node;
 	var interactive_pointer = 0;
 	var interactive_updated = false;
 	
+	make_geometry(overview_scene, root_node, 0, 0, 0);
+	
+	// keyboard input handling
 	document.addEventListener('keyup', function(event) {
 		interactive_updated = true;
 		// f
@@ -273,7 +286,7 @@ function start(files) {
 		if (interactive_mode_enabled)
 			renderer.render(interactive_scene, camera);
 		else
-			renderer.render(scene, camera);
+			renderer.render(overview_scene, camera);
 	}
 	
 	update_and_render();
