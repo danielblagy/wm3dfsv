@@ -95,45 +95,51 @@ function make_node_mesh(scene, node, node_size, x, y, z) {
 	return node_mesh;
 }
 
-function make_geometry(scene, node, x, z) {
-	const node_size = 5;
-	const x_gap = node_size * 10 / node.children.length;
-	const z_gap = node_size * 5;
+function make_geometry(scene, node, x, y, z) {
+	const x_gap = NODE_SIZE * 10 / node.children.length;
+	const z_gap = NODE_SIZE * 5;
+	const y_gap = NODE_SIZE;
 	
-	const node_mesh = make_node_mesh(scene, node, node_size, x, 0, z);
+	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
 	
 	let i = 0;
+	let j = 1;
 	let sign = 1;
-	let next_child_z = z - z_gap + node_mesh.position.z;
+	let next_dir_child_z = z - z_gap + node_mesh.position.z;
 	for (const child of node.children) {
-		let next_child_x = sign * (x_gap * i + child.children.length * node_size) + node_mesh.position.x;
-		
-		const line_points = [];
-		line_points.push(node_mesh.position);
-		line_points.push(new THREE.Vector3(next_child_x, 0, next_child_z));
-		
-		const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
-		
-		let line = new THREE.Line(line_geometry, LINE_MATERIAL);
-		scene.add(line);
-		
-		make_geometry(scene, child, next_child_x, next_child_z);
-		i++;
-		sign *= -1;
+		if (child.type == NodeType.Directory) {
+			let next_dir_child_x = sign * (x_gap * i + child.children.length * NODE_SIZE) + node_mesh.position.x;
+			
+			const line_points = [];
+			line_points.push(node_mesh.position);
+			line_points.push(new THREE.Vector3(next_dir_child_x, 0, next_dir_child_z));
+			
+			const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
+			
+			let line = new THREE.Line(line_geometry, LINE_MATERIAL);
+			scene.add(line);
+			
+			make_geometry(scene, child, next_dir_child_x, 0, next_dir_child_z);
+			i++;
+			sign *= -1;
+		}
+		else if (child.type === NodeType.File) {
+			let next_file_node_y = y_gap * j;
+			make_geometry(scene, child, node_mesh.position.x, next_file_node_y, node_mesh.position.z);
+			j++;
+		}
 	}
 }
 
 function make_interactive_geometry(scene, node, pointer) {
-	const node_size = 5;
-	
-	make_node_mesh(scene, node, node_size, 0, 0, 0);
+	make_node_mesh(scene, node, NODE_SIZE, 0, 0, 0);
 	
 	let i = 0;
-	const x_gap = node_size * 5;
+	const x_gap = NODE_SIZE * 5;
 	const start_x = -1 * x_gap * (node.children.length - 1) / 2;
 	for (const child of node.children) {
 		let x = start_x + x_gap * i;
-		let child_mesh = make_node_mesh(scene, child, node_size, x, 0, -5 * node_size);
+		let child_mesh = make_node_mesh(scene, child, NODE_SIZE, x, 0, -5 * NODE_SIZE);
 		
 		// highlight if selected
 		if (pointer == i) {
@@ -189,7 +195,7 @@ function start(files) {
 	camera.position.z = 50;
 	camera.position.y = 50;
 	
-	make_geometry(scene, root_node, 0, 0);
+	make_geometry(scene, root_node, 0, 0, 0);
 	
 	const interactive_scene = new THREE.Scene();
 	
