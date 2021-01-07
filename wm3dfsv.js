@@ -105,7 +105,7 @@ function count_dir_children(children) {
 }
 
 function make_geometry(scene, node, x, y, z) {
-	console.log(node, "  ", x, ":", y, ":", z);
+	//console.log(node, "  ", x, ":", y, ":", z);
 	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
 	
 	// for child files
@@ -118,19 +118,20 @@ function make_geometry(scene, node, x, y, z) {
 	const radius = arc_length_between_chidlren / central_angle_for_child;
 	
 	let j = 1;
-	let next_dir_child_z = z - radius;
 	let next_dir_child_x = x;
+	let next_dir_child_y = y + NODE_SIZE * 10;
+	let next_dir_child_z = z - radius;
 	for (const child of node.children) {
 		if (child.type == NodeType.Directory) {
 			// create line connecting the node mesh and the child node mesh
 			const line_points = [];
 			line_points.push(node_mesh.position);
-			line_points.push(new THREE.Vector3(next_dir_child_x, 0, next_dir_child_z));
+			line_points.push(new THREE.Vector3(next_dir_child_x, next_dir_child_y, next_dir_child_z));
 			const line_geometry = new THREE.BufferGeometry().setFromPoints(line_points);
 			let line = new THREE.Line(line_geometry, LINE_MATERIAL);
 			scene.add(line);
 			
-			make_geometry(scene, child, next_dir_child_x, 0, next_dir_child_z);
+			make_geometry(scene, child, next_dir_child_x, next_dir_child_y, next_dir_child_z);
 			
 			// figure out distance to the next supposed child location
 			let t = 2 * radius * Math.sin(central_angle_for_child / 2);
@@ -142,7 +143,7 @@ function make_geometry(scene, node, x, y, z) {
 			next_dir_child_z += dz;
 		}
 		else if (child.type === NodeType.File) {
-			let next_file_node_y = y_gap * j;
+			let next_file_node_y = y + y_gap * j;
 			make_geometry(scene, child, x, next_file_node_y, z);
 			j++;
 		}
@@ -200,16 +201,16 @@ function start(files) {
 	console.log(root_node);
 	
 	//initialise graphics
-	const camera_fov = 75;
-	const camera_aspect_ratio = window.innerWidth / window.innerHeight;
-	const camera_near = 0.1;
-	const camera_far = 1000;
+	const CAMERA_FOV = 75;
+	const CAMERA_ASPECT_RATIO = window.innerWidth / window.innerHeight;
+	const CAMERA_NEAR = 0.1;
+	const CAMERA_FAR = 1000;
 	
-	const camera_initial_position = new THREE.Vector3(0, 50, 50);
+	const CAMERA_INITIAL_POSITION = new THREE.Vector3(0, 50, 50);
 	
-	const camera = new THREE.PerspectiveCamera(camera_fov, camera_aspect_ratio, camera_near, camera_far);
+	const camera = new THREE.PerspectiveCamera(CAMERA_FOV, CAMERA_ASPECT_RATIO, CAMERA_NEAR, CAMERA_FAR);
 	
-	camera.position.set(camera_initial_position.x, camera_initial_position.y, camera_initial_position.z);
+	camera.position.set(CAMERA_INITIAL_POSITION.x, CAMERA_INITIAL_POSITION.y, CAMERA_INITIAL_POSITION.z);
 	
 	const overview_scene = new THREE.Scene();
 	const interactive_scene = new THREE.Scene();
