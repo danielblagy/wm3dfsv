@@ -96,20 +96,24 @@ function make_node_mesh(scene, node, node_size, x, y, z) {
 }
 
 function make_geometry(scene, node, x, y, z) {
-	const x_gap = NODE_SIZE * 10 / node.children.length;
-	const z_gap = NODE_SIZE * 5;
-	const y_gap = NODE_SIZE;
-	
 	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
 	
-	let i = 0;
+	//const x_gap = NODE_SIZE * 10 / node.children.length;
+	//const z_gap = NODE_SIZE * 5;
+	const y_gap = NODE_SIZE;
+	
+	// for child directories
+	const arc_length_between_chidlren = NODE_SIZE * 5;
+	const central_angle_for_child = 2 * Math.PI / node.children.length;
+	const radius = arc_length_between_chidlren / central_angle_for_child;
+	
+	//let i = 0;
 	let j = 1;
-	let sign = 1;
-	let next_dir_child_z = z - z_gap + node_mesh.position.z;
+	//let sign = 1;
+	let next_dir_child_z = node_mesh.position.z - radius;
+	let next_dir_child_x = node_mesh.position.x;
 	for (const child of node.children) {
 		if (child.type == NodeType.Directory) {
-			let next_dir_child_x = sign * (x_gap * i + child.children.length * NODE_SIZE) + node_mesh.position.x;
-			
 			const line_points = [];
 			line_points.push(node_mesh.position);
 			line_points.push(new THREE.Vector3(next_dir_child_x, 0, next_dir_child_z));
@@ -120,8 +124,16 @@ function make_geometry(scene, node, x, y, z) {
 			scene.add(line);
 			
 			make_geometry(scene, child, next_dir_child_x, 0, next_dir_child_z);
-			i++;
-			sign *= -1;
+			//i++;
+			//sign *= -1;
+			
+			let t = 2 * radius * Math.sin(central_angle_for_child / 2);
+			let angle = Math.PI / 2 - (Math.PI - central_angle_for_child) / 2;
+			let dz = Math.sin(angle) * t;
+			let dx = Math.cos(angle) * t;
+			
+			next_dir_child_x += dx;
+			next_dir_child_z += dz;
 		}
 		else if (child.type === NodeType.File) {
 			let next_file_node_y = y_gap * j;
