@@ -104,25 +104,56 @@ function count_dir_children(children) {
 	return i;
 }
 
+function count_file_children(children) {
+	let i = 0;
+	for (const child of children) {
+		if (child.type === NodeType.File)
+			i++;
+	}
+	return i;
+}
+
 function make_geometry(scene, node, x, y, z) {
-	//console.log(node, "  ", x, ":", y, ":", z);
+	if (node.name === "objects")
+		console.log(node, '  ', x, ':', y, ':', z);
 	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
 	
-	// for child files
+	let dir_children_amount = count_dir_children(node.children);
+	let file_children_amount = count_file_children(node.children);
+	
+	// for file nodes
 	const y_gap = NODE_SIZE;
 	
-	// for child directories
-	const arc_length_between_chidlren = NODE_SIZE * 5;
-	//const central_angle_for_child = 2 * Math.PI / node.children.length;
-	const central_angle_for_child = 2 * Math.PI / count_dir_children(node.children);
-	const radius = arc_length_between_chidlren / central_angle_for_child;
+	// for dir nodes
+	let radius = NODE_SIZE * 10;
+	radius -= dir_children_amount * NODE_SIZE * 0.001;
+	let angle_between_children = Math.PI * 2 / dir_children_amount;
 	
-	let j = 1;
-	let next_dir_child_x = x;
-	let next_dir_child_y = y + NODE_SIZE * 10;
-	let next_dir_child_z = z - radius;
+	let dir_count = 0;
+	let file_count = 1;
+	
+	let next_dir_child_y = y + y_gap * file_children_amount + NODE_SIZE * 5;
+	
 	for (const child of node.children) {
 		if (child.type == NodeType.Directory) {
+			let angle = angle_between_children * dir_count;// - Math.PI / 2;
+			let distance_to_next_child_position = 2 * radius * Math.sin(angle / 2);
+			let angle_for_next_calculation = Math.PI / 2 - (Math.PI - angle) / 2;
+				
+			let next_dir_child_x = x + Math.cos(angle_for_next_calculation) * distance_to_next_child_position;
+			let next_dir_child_z = z - Math.sin(angle_for_next_calculation) * distance_to_next_child_position;
+			
+			if (child.name === "lib" || child.name === ".git")
+				console.log(
+					child.name, '\n',
+					angle_between_children, '\n',
+					angle, '\n',
+					distance_to_next_child_position, '\n',
+					angle_for_next_calculation, '\n',
+					next_dir_child_x, '\n',
+					next_dir_child_z, '\n'
+				);
+			
 			// create line connecting the node mesh and the child node mesh
 			const line_points = [];
 			line_points.push(node_mesh.position);
@@ -132,20 +163,12 @@ function make_geometry(scene, node, x, y, z) {
 			scene.add(line);
 			
 			make_geometry(scene, child, next_dir_child_x, next_dir_child_y, next_dir_child_z);
-			
-			// figure out distance to the next supposed child location
-			let t = 2 * radius * Math.sin(central_angle_for_child / 2);
-			let angle = Math.PI / 2 - (Math.PI - central_angle_for_child) / 2;
-			let dz = Math.sin(angle) * t;
-			let dx = Math.cos(angle) * t;
-			
-			next_dir_child_x += dx;
-			next_dir_child_z += dz;
+			dir_count++;
 		}
 		else if (child.type === NodeType.File) {
-			let next_file_node_y = y + y_gap * j;
+			let next_file_node_y = y + y_gap * file_count;
 			make_geometry(scene, child, x, next_file_node_y, z);
-			j++;
+			file_count++;
 		}
 	}
 }
