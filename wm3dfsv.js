@@ -209,11 +209,6 @@ function start(files) {
 	const CAMERA_INITIAL_POSITION = new THREE.Vector3(0, 50, 50);
 	
 	const camera = new THREE.PerspectiveCamera(CAMERA_FOV, CAMERA_ASPECT_RATIO, CAMERA_NEAR, CAMERA_FAR);
-	//const camera = new THREE.OrthographicCamera(
-	//	window.innerWidth / - 2, window.innerWidth / 2,
-	//	window.innerHeight / 2, window.innerHeight / - 2,
-	//	-1000, 3000
-	//);
 	
 	camera.position.set(CAMERA_INITIAL_POSITION.x, CAMERA_INITIAL_POSITION.y, CAMERA_INITIAL_POSITION.z);
 	
@@ -227,8 +222,10 @@ function start(files) {
 	
 	//const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	const controls = new THREE.FirstPersonControls(camera, renderer.domElement);
-	controls.lookSpeed = 0.05;
-    controls.movementSpeed = 50;
+	controls.lookSpeed = 0.1;
+	controls.movementSpeed = 20;
+	
+	let clock = new THREE.Clock();
 	
 	var interactive_mode_enabled = false;
 	var interactive_current_node = root_node;
@@ -238,72 +235,60 @@ function start(files) {
 	make_geometry(overview_scene, root_node, 0, 0, 0);
 	
 	// keyboard input handling
-	//document.addEventListener('keyup', function(event) {
-	//	interactive_updated = true;
-	//	// f
-	//	if(event.keyCode == 70) {
-	//		interactive_mode_enabled = !interactive_mode_enabled;
-	//	}
-	//	
-	//	// s
-	//	else if(event.keyCode == 83) {
-	//		if (interactive_mode_enabled) {
-	//			if (interactive_current_node !== root_node) {
-	//				interactive_current_node = interactive_current_node.root;
-	//			}
-	//		}
-	//		else {
-	//			camera.position.z += 5;
-	//		}
-	//	}
-	//	// w
-	//	else if(event.keyCode == 87) {
-	//		if (interactive_mode_enabled) {
-	//			if (interactive_pointer < interactive_current_node.children.length) {
-	//				interactive_current_node = interactive_current_node.children[interactive_pointer];
-	//				interactive_pointer = 0;
-	//			}
-	//		}
-	//		else {
-	//			camera.position.z -= 5;
-	//		}
-	//	}
-	//	// d
-	//	else if(event.keyCode == 68) {
-	//		if (interactive_mode_enabled) {
-	//			if (interactive_pointer + 1 < interactive_current_node.children.length) {
-	//				interactive_pointer++;
-	//			}
-	//			else {
-	//				interactive_pointer = 0;
-	//			}
-	//		}
-	//		else {
-	//			camera.position.x += 5;
-	//		}
-	//	}
-	//	// a
-	//	else if(event.keyCode == 65) {
-	//		if (interactive_mode_enabled) {
-	//			if (interactive_pointer === 0) {
-	//				if (interactive_current_node.children.length)
-	//				interactive_pointer = interactive_current_node.children.length - 1;
-	//			}
-	//			else {
-	//				interactive_pointer--;
-	//			}
-	//		}
-	//		else {
-	//			camera.position.x -= 5;
-	//		}
-	//	}
-	//});
+	document.addEventListener('keyup', function(event) {
+		interactive_updated = true;
+		// f
+		if(event.keyCode == 70) {
+			interactive_mode_enabled = !interactive_mode_enabled;
+		}
+		
+		// s
+		else if(event.keyCode == 83) {
+			if (interactive_mode_enabled) {
+				if (interactive_current_node !== root_node) {
+					interactive_current_node = interactive_current_node.root;
+				}
+			}
+		}
+		// w
+		else if(event.keyCode == 87) {
+			if (interactive_mode_enabled) {
+				if (interactive_pointer < interactive_current_node.children.length) {
+					interactive_current_node = interactive_current_node.children[interactive_pointer];
+					interactive_pointer = 0;
+				}
+			}
+		}
+		// d
+		else if(event.keyCode == 68) {
+			if (interactive_mode_enabled) {
+				if (interactive_pointer + 1 < interactive_current_node.children.length) {
+					interactive_pointer++;
+				}
+				else {
+					interactive_pointer = 0;
+				}
+			}
+		}
+		// a
+		else if(event.keyCode == 65) {
+			if (interactive_mode_enabled) {
+				if (interactive_pointer === 0) {
+					if (interactive_current_node.children.length)
+					interactive_pointer = interactive_current_node.children.length - 1;
+				}
+				else {
+					interactive_pointer--;
+				}
+			}
+		}
+	});
 	
 	function update_and_render() {
 		requestAnimationFrame(update_and_render);
 		
-		// required if controls.enableDamping or controls.autoRotate are set to true
-		controls.update(0.1);
+		let delta = clock.getDelta();
+		controls.update(delta);
 		
 		if (interactive_updated)
 		{
