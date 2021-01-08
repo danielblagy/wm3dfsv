@@ -250,6 +250,7 @@ function start(files) {
 	
 	let clock = new THREE.Clock();
 	
+	// for camera pull feature
 	const raycaster = new THREE.Raycaster();
 	var mouse = new THREE.Vector2();
 	
@@ -258,14 +259,6 @@ function start(files) {
 	
 	var camera_is_being_pulled = false;
 	var camera_pull_activated = false;
-	
-	function onMouseMove( event ) {
-		// calculate mouse position in normalized device coordinates
-		// (-1 to +1) for both components
-	
-		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-	}
 	
 	var interactive_mode_enabled = false;
 	var interactive_current_node = root_node;
@@ -324,7 +317,13 @@ function start(files) {
 		}
 	});
 	
-	window.addEventListener('mousemove', onMouseMove, false);
+	window.addEventListener('mousemove', function(event) {
+		// calculate mouse position in normalized device coordinates
+		// (-1 to +1) for both components
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	}, false);
+	
 	window.addEventListener('click', function(event) {
 		camera_pull_activated = true;
 	});
@@ -342,11 +341,13 @@ function start(files) {
 			// calculate objects intersecting the picking ray
 			const intersects = raycaster.intersectObjects(overview_scene.children);
 			
-			for ( let i = 0; i < intersects.length; i ++ ) {
-				let position = intersects[i].object.position;
+			if (intersects.length > 0) {
+				let position = intersects[0].object.position;
 				camera_pull_point.set(position.x, position.y, position.z);
 				camera_is_being_pulled = true;
 			}
+			
+			camera_pull_activated = false;
 		}
 		
 		if (camera_is_being_pulled) {
@@ -355,8 +356,8 @@ function start(files) {
 			let dz = (camera.position.z - camera_pull_point.z) / 5;
 			camera.position.set(camera.position.x - dx, camera.position.y - dy, camera.position.z - dz);
 			
-			if (Math.abs(dx) < NODE_SIZE * 4 && Math.abs(dy) < NODE_SIZE * 4 && Math.abs(dz) < NODE_SIZE * 4)
-				camera_is_being_pulled - false;
+			if (Math.abs(dx) < NODE_SIZE * 2 && Math.abs(dy) < NODE_SIZE * 2 && Math.abs(dz) < NODE_SIZE * 2)
+				camera_is_being_pulled = false;
 		}
 		
 		if (interactive_updated)
