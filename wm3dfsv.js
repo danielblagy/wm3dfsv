@@ -17,13 +17,11 @@ class Node {
 const NODE_SIZE = 5;
 
 const DIRECTORY_GEOMETRY = new THREE.BoxGeometry(NODE_SIZE, NODE_SIZE, NODE_SIZE);
-const DIRECTORY_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x15384a } );
+const FILE_GEOMETRY = new THREE.CylinderGeometry(NODE_SIZE / 2, NODE_SIZE / 2, NODE_SIZE, 32);
 
-var FILE_GEOMETRY = new THREE.SphereGeometry(NODE_SIZE / 2);
-var FILE_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x3bd163 } );
-
-const LINE_MATERIAL = new THREE.LineBasicMaterial( { color: 0xff0000 } );
-const WIREFRAME_MATERIAL = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+const DIRECTORY_MATERIAL = new THREE.MeshBasicMaterial( { color: 0xb56f05 } );
+const FILE_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x4e98de } );
+const WIREFRAME_MATERIAL = new THREE.LineBasicMaterial( { color: 0x4a320f } );
 
 function init()
 {
@@ -107,20 +105,6 @@ function make_interactive_geometry(scene, node) {
 	for (const child of node.children) {
 		let x = start_x + x_gap * i;
 		child.mesh = make_node_mesh(scene, child, NODE_SIZE, x, 0, -5 * NODE_SIZE);
-		
-		// highlight if selected
-		/*if (pointer == i) {
-			const wireframe_geometry = new THREE.WireframeGeometry(child_mesh.geometry);
-			const wireframe_line = new THREE.LineSegments(wireframe_geometry, WIREFRAME_MATERIAL);
-			wireframe_line.material.depthTest = false;
-			wireframe_line.material.opacity = 0.25;
-			wireframe_line.material.transparent = true;
-			wireframe_line.position.x = child_mesh.position.x;
-			wireframe_line.position.y = child_mesh.position.y;
-			wireframe_line.position.z = child_mesh.position.z;
-			scene.add(wireframe_line);
-		}*/
-		
 		i++;
 	}
 }
@@ -164,7 +148,7 @@ function start(files) {
 	
 	const renderer = new THREE.WebGLRenderer({antialias : true});
 	renderer.setSize(window.innerWidth, window.innerHeight);
-	renderer.setClearColor(0x4B5A20, 1.0);
+	renderer.setClearColor(0x2b3b13, 1.0);
 	document.body.appendChild(renderer.domElement);
 	
 	const controls = new THREE.FirstPersonControls(camera, renderer.domElement);
