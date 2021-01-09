@@ -5,9 +5,9 @@ const NodeType = {
 Object.freeze(NodeType);
 
 class Node {
-	constructor(name, root, children, type, mesh) {
+	constructor(name, parent, children, type, mesh) {
 		this.name = name;
-		this.root = root;
+		this.parent = parent;
 		this.children = children;
 		this.type = type;
 		this.mesh = mesh;
@@ -171,7 +171,7 @@ function start(files) {
 		camera_is_being_pulled = true;
 		
 		if (current_node.mesh === mesh && current_node !== root_node) {
-			current_node = current_node.root;
+			current_node = current_node.parent;
 		}
 		else {
 			for (let i = 0; i < current_node.children.length; i++) {
