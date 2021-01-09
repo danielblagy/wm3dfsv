@@ -91,8 +91,8 @@ function make_node_mesh(scene, node, node_size, x, y, z) {
 	});
 	
 	label.position.x = node_mesh.position.x;
-	label.position.y = node_mesh.position.y;
-	label.position.z = node_mesh.position.z + node_size;
+	label.position.y = node_mesh.position.y + node_size;
+	label.position.z = node_mesh.position.z - node_size;
 	scene.add(label);
 	
 	return node_mesh;
@@ -209,13 +209,14 @@ function start(files) {
 		
 		// slowly pull camera towards the clicked mesh
 		if (camera_is_being_pulled) {
-			let dx = (camera.position.x - camera_pull_point.x) / 5;// * delta;
-			let dy = (camera.position.y - camera_pull_point.y) / 5;// * delta;
-			let dz = (camera.position.z - camera_pull_point.z) / 5;// * delta;
+			let dx = (camera.position.x - camera_pull_point.x) / 10;
+			let dy = (camera.position.y - camera_pull_point.y) / 10;
+			let dz = (camera.position.z - camera_pull_point.z) / 10;
+			
 			camera.position.set(camera.position.x - dx, camera.position.y - dy, camera.position.z - dz);
 			
 			// when camera gets close enough, stop pulling
-			if (Math.abs(dx) < NODE_SIZE * 0.5 && Math.abs(dy) < NODE_SIZE * 0.5 && Math.abs(dz) < NODE_SIZE * 0.5) {
+			if (Math.abs(dx) < NODE_SIZE * 0.1 && Math.abs(dy) < NODE_SIZE * 0.1 && Math.abs(dz) < NODE_SIZE * 0.1) {
 				camera_is_being_pulled = false;
 				interactive_update = true;
 				camera.position.set(CAMERA_INITIAL_POSITION.x, CAMERA_INITIAL_POSITION.y, CAMERA_INITIAL_POSITION.z);
