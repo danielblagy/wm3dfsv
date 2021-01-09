@@ -113,7 +113,7 @@ function count_file_children(children) {
 	return i;
 }
 
-function make_geometry(scene, node, x, y, z) {
+function make_geometry(scene, node, x, y, z, level) {
 	if (node.name === "objects")
 		console.log(node, '  ', x, ':', y, ':', z);
 	const node_mesh = make_node_mesh(scene, node, NODE_SIZE, x, y, z);
@@ -125,7 +125,7 @@ function make_geometry(scene, node, x, y, z) {
 	const y_gap = NODE_SIZE;
 	
 	// for dir nodes
-	let radius = NODE_SIZE * 10;
+	let radius = NODE_SIZE * 10 / level;
 	radius -= dir_children_amount * NODE_SIZE * 0.001;
 	let angle_between_children = Math.PI * 2 / dir_children_amount;
 	
@@ -136,7 +136,7 @@ function make_geometry(scene, node, x, y, z) {
 	
 	for (const child of node.children) {
 		if (child.type == NodeType.Directory) {
-			let angle = angle_between_children * dir_count;// - Math.PI / 2;
+			let angle = angle_between_children * dir_count;// - Math.PI * 2;
 			let distance_to_next_child_position = 2 * radius * Math.sin(angle / 2);
 			let angle_for_next_calculation = Math.PI / 2 - (Math.PI - angle) / 2;
 				
@@ -162,12 +162,12 @@ function make_geometry(scene, node, x, y, z) {
 			let line = new THREE.Line(line_geometry, LINE_MATERIAL);
 			scene.add(line);
 			
-			make_geometry(scene, child, next_dir_child_x, next_dir_child_y, next_dir_child_z);
+			make_geometry(scene, child, next_dir_child_x, next_dir_child_y, next_dir_child_z, level + 0.5);
 			dir_count++;
 		}
 		else if (child.type === NodeType.File) {
 			let next_file_node_y = y + y_gap * file_count;
-			make_geometry(scene, child, x, next_file_node_y, z);
+			make_geometry(scene, child, x, next_file_node_y, z, level + 0.5);
 			file_count++;
 		}
 	}
@@ -243,7 +243,6 @@ function start(files) {
 	renderer.setClearColor(0x4B5A20, 1.0);
 	document.body.appendChild(renderer.domElement);
 	
-	//const controls = new THREE.OrbitControls(camera, renderer.domElement);
 	const controls = new THREE.FirstPersonControls(camera, renderer.domElement);
 	controls.lookSpeed = 0.1;
 	controls.movementSpeed = 20;
@@ -265,7 +264,7 @@ function start(files) {
 	var interactive_pointer = 0;
 	var interactive_updated = false;
 	
-	make_geometry(overview_scene, root_node, 0, 0, 0);
+	make_geometry(overview_scene, root_node, 0, 0, 0, 0.5);
 	
 	// keyboard input handling
 	document.addEventListener('keyup', function(event) {
@@ -356,6 +355,7 @@ function start(files) {
 			let dz = (camera.position.z - camera_pull_point.z) / 5;
 			camera.position.set(camera.position.x - dx, camera.position.y - dy, camera.position.z - dz);
 			
+			// when camera gets close enough, stop pulling
 			if (Math.abs(dx) < NODE_SIZE * 2 && Math.abs(dy) < NODE_SIZE * 2 && Math.abs(dz) < NODE_SIZE * 2)
 				camera_is_being_pulled = false;
 		}
