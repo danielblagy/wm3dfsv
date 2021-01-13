@@ -15,10 +15,7 @@ class Node {
 	}
 }
 
-const NODE_SIZE = 5;
-
-const DIRECTORY_GEOMETRY = new THREE.BoxGeometry(NODE_SIZE, NODE_SIZE, NODE_SIZE);
-const FILE_GEOMETRY = new THREE.CylinderGeometry(NODE_SIZE / 2, NODE_SIZE / 2, NODE_SIZE, 32);
+const MESH_BASE_SIZE = 5;
 
 const DIRECTORY_MATERIAL = new THREE.MeshBasicMaterial( { color: 0xb56f05 } );
 const FILE_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x4e98de } );
@@ -121,14 +118,14 @@ function make_node_mesh(scene, node, mesh_size, x, y, z) {
 }
 
 function make_interactive_geometry(scene, node) {
-	node.mesh = make_node_mesh(scene, node, NODE_SIZE, 0, 0, 0);
+	node.mesh = make_node_mesh(scene, node, MESH_BASE_SIZE, 0, 0, 0);
 	
 	let i = 0;
-	const x_gap = NODE_SIZE * 5;
+	const x_gap = MESH_BASE_SIZE * 5;
 	const start_x = -1 * x_gap * (node.children.length - 1) / 2;
 	for (const child of node.children) {
 		let x = start_x + x_gap * i;
-		child.mesh = make_node_mesh(scene, child, NODE_SIZE, x, 0, -5 * NODE_SIZE);
+		child.mesh = make_node_mesh(scene, child, MESH_BASE_SIZE, x, 0, -5 * MESH_BASE_SIZE);
 		i++;
 	}
 }
@@ -224,7 +221,7 @@ function start(files) {
 			camera.position.set(camera.position.x - dx, camera.position.y - dy, camera.position.z - dz);
 			
 			// when camera gets close enough, stop pulling
-			if (Math.abs(dx) < NODE_SIZE * 0.1 && Math.abs(dy) < NODE_SIZE * 0.1 && Math.abs(dz) < NODE_SIZE * 0.1) {
+			if (Math.abs(dx) < MESH_BASE_SIZE * 0.1 && Math.abs(dy) < MESH_BASE_SIZE * 0.1 && Math.abs(dz) < MESH_BASE_SIZE * 0.1) {
 				camera_is_being_pulled = false;
 				interactive_update = true;
 				camera.position.set(CAMERA_INITIAL_POSITION.x, CAMERA_INITIAL_POSITION.y, CAMERA_INITIAL_POSITION.z);
