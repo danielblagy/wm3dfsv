@@ -5,11 +5,12 @@ const NodeType = {
 Object.freeze(NodeType);
 
 class Node {
-	constructor(name, parent, children, type, mesh) {
+	constructor(name, parent, children, type, size, mesh) {
 		this.name = name;
 		this.parent = parent;
 		this.children = children;
 		this.type = type;
+		this.size = size;
 		this.mesh = mesh;
 	}
 }
@@ -21,7 +22,6 @@ const FILE_GEOMETRY = new THREE.CylinderGeometry(NODE_SIZE / 2, NODE_SIZE / 2, N
 
 const DIRECTORY_MATERIAL = new THREE.MeshBasicMaterial( { color: 0xb56f05 } );
 const FILE_MATERIAL = new THREE.MeshBasicMaterial( { color: 0x4e98de } );
-const WIREFRAME_MATERIAL = new THREE.LineBasicMaterial( { color: 0x4a320f } );
 
 function init()
 {
@@ -35,7 +35,7 @@ function init()
 	}
 }
 
-function create_node(current_node, dirs, count, length) {
+function create_node(current_node, dirs, count, length, size) {
 	let found = false;
 	
 	var i;
@@ -53,9 +53,11 @@ function create_node(current_node, dirs, count, length) {
 		// e.g. if dirs = ['project', 'res', 'data.json'], the last element is a file (data.json),
 		// others are directories
 		if (count == length - 1)
-			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.File, undefined));
+			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.File, size, undefined));
 		else
-			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.Directory, undefined));
+			current_node.children.push(new Node(dirs[count], current_node, [], NodeType.Directory, 0, undefined));
+		
+		current_node.size += size;
 		
 		current_node = current_node.children[current_node.children.length - 1];
 	}
@@ -63,34 +65,56 @@ function create_node(current_node, dirs, count, length) {
 	count++;
 	
 	if (count < length)
-		create_node(current_node, dirs, count, length);
+		create_node(current_node, dirs, count, length, size);
 }
 
-function make_node_mesh(scene, node, node_size, x, y, z) {
+function make_file_mesh(scene, radius, height) {
+	const file_geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
+	var mesh = new THREE.Mesh(file_geometry, FILE_MATERIAL);
+	return mesh;
+}
+
+function make_directory_mesh(scene, width, height) {
+	const directory_geometry = new THREE.BoxGeometry(width, height, width);
+	var mesh = new THREE.Mesh(directory_geometry, DIRECTORY_MATERIAL);
+	return mesh;
+}
+
+function make_node_mesh(scene, node, mesh_size, x, y, z) {
+	if (node.size <= 1000) {
+		var height = mesh_size;
+	}
+	else if (node.size <= 100000) {
+		var height = mesh_size * 2;
+	}
+	else {
+		var height = mesh_size * 3;
+	}
+	
 	if (node.type === NodeType.Directory) {
-		var node_mesh = new THREE.Mesh(DIRECTORY_GEOMETRY, DIRECTORY_MATERIAL);
+		var node_mesh = make_directory_mesh(scene, mesh_size, height);
 		node_mesh.name = 'directory';
 	}
 	else if (node.type === NodeType.File) {
-		var node_mesh = new THREE.Mesh(FILE_GEOMETRY, FILE_MATERIAL);
+		var node_mesh = make_file_mesh(scene, mesh_size / 2, height);
 		node_mesh.name = 'file';
 	}
 	
 	node_mesh.position.x = x;
-	node_mesh.position.y = y;
+	node_mesh.position.y = y + height / 2;
 	node_mesh.position.z = z;
 	scene.add(node_mesh);
 	
 	let label = new THREE.TextSprite({
 		text: node.name,
 		fontFamily: 'Arial, Helvetica, sans-serif',
-		fontSize: node_size / 2,
+		fontSize: mesh_size / 2,
 		color: '#ffbbff',
 	});
 	
 	label.position.x = node_mesh.position.x;
-	label.position.y = node_mesh.position.y + node_size;
-	label.position.z = node_mesh.position.z - node_size;
+	label.position.y = node_mesh.position.y - mesh_size;
+	label.position.z = node_mesh.position.z + mesh_size;
 	scene.add(label);
 	
 	return node_mesh;
@@ -124,11 +148,11 @@ function clear_three_object(three_object) {
 
 function start(files) {
 	// generate a tree structure
-	var root_node = new Node(files[0]["webkitRelativePath"].split("/")[0], undefined, [], NodeType.Directory, undefined);
+	var root_node = new Node(files[0]["webkitRelativePath"].split("/")[0], undefined, [], NodeType.Directory, 0, undefined);
 	for (const file of files) {
 		let dirs = file["webkitRelativePath"].split("/");
 		dirs.shift();	// remove the first element (which is a name of the root dir)
-		create_node(root_node, dirs, 0, dirs.length);
+		create_node(root_node, dirs, 0, dirs.length, file.size);
 	}
 	console.log(root_node);
 	
